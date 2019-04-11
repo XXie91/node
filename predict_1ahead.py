@@ -16,7 +16,7 @@ from datetime import datetime
 parser = argparse.ArgumentParser()
 parser.add_argument('--adjoint', type=eval, default=False)
 parser.add_argument('--visualize', type=eval, default=False)
-parser.add_argument('--niters', type=int, default=1000)
+parser.add_argument('--niters', type=int, default=500)
 parser.add_argument('--lr', type=float, default=0.005)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train_dir', type=str, default='nnr/')
@@ -30,7 +30,7 @@ else:
 def loadCSVfile2():
     tmp = np.loadtxt("UK.csv", dtype=np.str, delimiter=",")
     total_len = 920
-    timestep = 12
+    timestep = 48
     samp_trajs = tmp[0:timestep]
     for num in range(1,total_len):
         samp_trajs = np.vstack((samp_trajs,tmp[num:num+timestep]))
@@ -69,13 +69,19 @@ class RecognitionRNN(nn.Module):
         self.nhidden = nhidden
         self.nbatch = nbatch
         self.i2h = nn.Linear(obs_dim + nhidden, nhidden)
-        self.i2o = nn.Linear(obs_dim + nhidden, latent_dim * 2)
+        # self.i2o = nn.Linear(obs_dim + nhidden, latent_dim * 2)
+        self.h2h = nn.Linear(nhidden, nhidden)
+        self.i2o = nn.Linear(nhidden, latent_dim * 2)
+        self.relu = nn.ReLU(inplace=True)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x, h):
         combined = torch.cat((x, h), 1)
-        h = self.i2h(combined)
-        out = self.i2o(combined)
+        h1 = self.i2h(combined)
+        h1 = self.relu(h1)
+        h = self.h2h(h1)
+        h = self.relu(h)
+        out = self.i2o(h1)
         out = self.softmax(out)
         return out, h
 
@@ -114,9 +120,9 @@ def normal_kl(mu1, lv1, mu2, lv2):
     return kl
 
 if __name__ == '__main__':
-    latent_dim = 20
-    nhidden = 25
-    rnn_nhidden = 25
+    latent_dim = 100
+    nhidden = 125
+    rnn_nhidden = 125
     obs_dim = 3
     pred_dim = 1
     '''

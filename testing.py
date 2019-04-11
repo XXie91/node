@@ -20,8 +20,8 @@ else:
     
 def loadCSVfile2():
     tmp = np.loadtxt("UK.csv", dtype=np.float, delimiter=",")
-    total_len = 1440
-    timestep = 14
+    total_len = 2000
+    timestep = 16
     samp_trajs = tmp[0:timestep]
     for num in range(1,total_len):
         samp_trajs = np.vstack((samp_trajs,tmp[num:num+timestep]))
@@ -60,13 +60,19 @@ class RecognitionRNN(nn.Module):
         self.nhidden = nhidden
         self.nbatch = nbatch
         self.i2h = nn.Linear(obs_dim + nhidden, nhidden)
-        self.i2o = nn.Linear(obs_dim + nhidden, latent_dim * 2)
+        # self.i2o = nn.Linear(obs_dim + nhidden, latent_dim * 2)
+        self.h2h = nn.Linear(nhidden, nhidden)
+        self.i2o = nn.Linear(nhidden, latent_dim * 2)
+        self.relu = nn.ReLU(inplace=True)
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x, h):
         combined = torch.cat((x, h), 1)
-        h = self.i2h(combined)
-        out = self.i2o(combined)
+        h1 = self.i2h(combined)
+        h1 = self.relu(h1)
+        h = self.h2h(h1)
+        h = self.relu(h)
+        out = self.i2o(h1)
         out = self.softmax(out)
         return out, h
 
@@ -106,8 +112,8 @@ def normal_kl(mu1, lv1, mu2, lv2):
 
 if __name__ == '__main__':
     latent_dim = 20
-    nhidden = 25
-    rnn_nhidden = 25
+    nhidden = 30
+    rnn_nhidden = 30
     obs_dim = 3
     pred_dim = 1
     '''
