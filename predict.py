@@ -16,7 +16,7 @@ from datetime import datetime
 parser = argparse.ArgumentParser()
 parser.add_argument('--adjoint', type=eval, default=False)
 parser.add_argument('--visualize', type=eval, default=False)
-parser.add_argument('--niters', type=int, default=2000)
+parser.add_argument('--niters', type=int, default=5000)
 parser.add_argument('--lr', type=float, default=0.0001)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train_dir', type=str, default='nnr/')
@@ -32,7 +32,7 @@ else:
 def loadCSVfile2():
     tmp = np.loadtxt("UK.csv", dtype=np.str, delimiter=",")
     total_len = 920
-    timestep = 60
+    timestep = 48
     samp_trajs = tmp[0:timestep]
     for num in range(1,total_len):
         samp_trajs = np.vstack((samp_trajs,tmp[num:num+timestep]))
@@ -122,9 +122,9 @@ def normal_kl(mu1, lv1, mu2, lv2):
     return kl
 
 if __name__ == '__main__':
-    latent_dim = 128
-    nhidden = 128
-    rnn_nhidden = 128
+    latent_dim = 512
+    nhidden = 512
+    rnn_nhidden = 512
     obs_dim = 3
     pred_dim = 1
     flag = 0
@@ -135,7 +135,6 @@ if __name__ == '__main__':
                           if torch.cuda.is_available() else 'cpu')
     '''
     device = torch.device('cpu')'''
-    torch.cuda.empty_cache()
 
     samp_trajs,samp_ts,nbatch,t_len = loadCSVfile2()
     
@@ -168,8 +167,7 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             # backward in time to infer q(z_0)
             h = rec.initHidden().to(device)
-            for t in reversed(range(48)):
-                # samp_trajs.size(1)
+            for t in reversed(range(samp_trajs.size(1))):
                 obs = samp_trajs[:,t,:]               
                 out, h = rec.forward(obs, h)
             qz0_mean, qz0_logvar = out[:, :latent_dim], out[:, latent_dim:]

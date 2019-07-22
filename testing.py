@@ -20,7 +20,7 @@ else:
     
 def loadCSVfile2():
     tmp = np.loadtxt("UK.csv", dtype=np.float, delimiter=",")
-    total_len = 2000
+    total_len = 1440
     timestep = 60
     samp_trajs = tmp[0:timestep]
     for num in range(1,total_len):
@@ -110,9 +110,9 @@ def normal_kl(mu1, lv1, mu2, lv2):
     return kl
 
 if __name__ == '__main__':
-    latent_dim = 128
-    nhidden = 128
-    rnn_nhidden = 128
+    latent_dim = 512
+    nhidden = 512
+    rnn_nhidden = 512
     obs_dim = 3
     pred_dim = 1
     '''
